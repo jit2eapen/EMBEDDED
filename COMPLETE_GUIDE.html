@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ESP32 LED Controller — Complete Project Guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Sora:wght@300;400;500;600;700;800&display=swap');
+
+  :root{
+    --bg:#080810;
+    --surface:#0f0f1a;
+    --surface2:#141428;
+    --border:#1e1e35;
+    --border2:#252545;
+    --accent:#5a6fff;
+    --accent2:#ff6b9d;
+    --accent3:#6bffc8;
+    --accent4:#ffc96b;
+    --text:#dde0f5;
+    --muted:#5a5a7a;
+    --code:#c8d0ff;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+
+  body{
+    font-family:'Sora',sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    font-size:15px;
+    line-height:1.75;
+  }
+
+  /* ── HEADER ── */
+  header{
+    background:linear-gradient(160deg,#08081a 0%,#100820 50%,#080810 100%);
+    border-bottom:1px solid var(--border);
+    padding:60px 20px 52px;
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+  }
+  header::before{
+    content:'';position:absolute;inset:0;
+    background:radial-gradient(ellipse at 50% 0%,rgba(90,111,255,.18) 0%,transparent 65%);
+    pointer-events:none;
+  }
+  .h-badge{
+    display:inline-block;
+    background:rgba(90,111,255,.12);
+    border:1px solid rgba(90,111,255,.3);
+    color:#8a9aff;font-size:11px;font-weight:700;
+    letter-spacing:2px;text-transform:uppercase;
+    padding:5px 16px;border-radius:20px;
+    margin-bottom:18px;font-family:'JetBrains Mono',monospace;
+  }
+  header h1{
+    font-size:clamp(26px,5vw,52px);font-weight:800;
+    line-height:1.1;margin-bottom:12px;
+    background:linear-gradient(135deg,#fff 30%,#8a9aff 100%);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    background-clip:text;
+  }
+  header p{color:var(--muted);font-size:15px;font-weight:300;max-width:520px;margin:0 auto}
+  .h-tags{display:flex;gap:8px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+  .h-tag{
+    background:rgba(255,255,255,.05);
+    border:1px solid var(--border2);
+    color:var(--muted);font-size:11px;
+    padding:4px 12px;border-radius:4px;
+    font-family:'JetBrains Mono',monospace;
+  }
+
+  /* ── STICKY NAV ── */
+  nav{
+    background:rgba(8,8,16,.95);
+    border-bottom:1px solid var(--border);
+    backdrop-filter:blur(12px);
+    position:sticky;top:0;z-index:100;
+    overflow-x:auto;white-space:nowrap;
+    padding:0 16px;
+  }
+  .nav-inner{display:inline-flex;gap:0}
+  .nav-item{
+    padding:13px 16px;font-size:11px;font-weight:700;
+    font-family:'JetBrains Mono',monospace;
+    color:var(--muted);cursor:pointer;
+    border-bottom:2px solid transparent;
+    letter-spacing:.5px;text-transform:uppercase;
+    transition:all .2s;text-decoration:none;
+    display:inline-block;
+  }
+  .nav-item:hover{color:var(--accent)}
+  .nav-item.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+  /* ── LAYOUT ── */
+  .container{max-width:860px;margin:0 auto;padding:0 16px 80px}
+
+  /* ── PHASE ── */
+  .phase{
+    display:flex;align-items:center;gap:14px;
+    margin:56px 0 22px;padding-bottom:14px;
+    border-bottom:1px solid var(--border2);
+    scroll-margin-top:60px;
+  }
+  .ph-num{
+    background:var(--accent);color:#fff;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;font-weight:700;
+    padding:3px 12px;border-radius:6px;
+    letter-spacing:1px;white-space:nowrap;
+  }
+  .phase h2{font-size:20px;font-weight:700;color:#fff}
+  .ph-tag{
+    margin-left:auto;font-size:10px;font-weight:700;
+    font-family:'JetBrains Mono',monospace;
+    padding:3px 10px;border-radius:10px;
+    border:1px solid;white-space:nowrap;
+  }
+  .tag-hw{color:var(--accent3);border-color:rgba(107,255,200,.25);background:rgba(107,255,200,.06)}
+  .tag-sw{color:var(--accent);border-color:rgba(90,111,255,.25);background:rgba(90,111,255,.06)}
+  .tag-git{color:var(--accent4);border-color:rgba(255,201,107,.25);background:rgba(255,201,107,.06)}
+
+  /* ── STEP CARD ── */
+  .step{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;margin-bottom:14px;
+    overflow:hidden;
+  }
+  .sh{
+    display:flex;align-items:flex-start;gap:14px;
+    padding:16px 20px 12px;
+    border-bottom:1px solid var(--border);
+    background:var(--surface2);
+  }
+  .sn{
+    background:var(--accent);color:#fff;
+    font-size:11px;font-weight:700;
+    font-family:'JetBrains Mono',monospace;
+    min-width:28px;height:28px;border-radius:6px;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;margin-top:1px;
+  }
+  .st{font-size:15px;font-weight:600;color:#fff;margin-bottom:2px}
+  .sw{font-size:12px;color:var(--muted);font-style:italic}
+  .sb{padding:18px 20px;font-size:14px;color:#a8aac8}
+  .sb p{margin-bottom:10px}
+  .sb p:last-child{margin-bottom:0}
+
+  /* ── CODE ── */
+  .cb{background:#080810;border:1px solid var(--border2);border-radius:8px;margin:12px 0;overflow:hidden}
+  .cb-label{
+    background:rgba(255,255,255,.03);
+    padding:6px 14px;font-size:10px;
+    font-family:'JetBrains Mono',monospace;
+    color:var(--muted);letter-spacing:1px;
+    text-transform:uppercase;
+    border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  pre{
+    padding:16px 18px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12.5px;line-height:1.65;
+    color:var(--code);overflow-x:auto;white-space:pre;
+  }
+  code{
+    font-family:'JetBrains Mono',monospace;
+    background:rgba(90,111,255,.12);
+    color:#9aaeff;padding:2px 7px;
+    border-radius:4px;font-size:13px;
+  }
+
+  /* ── CALLOUTS ── */
+  .info{background:rgba(90,111,255,.07);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;padding:12px 14px;margin:12px 0;font-size:13.5px;color:#a0a8e8}
+  .warn{background:rgba(255,107,107,.07);border-left:3px solid #ff6b6b;border-radius:0 6px 6px 0;padding:12px 14px;margin:12px 0;font-size:13.5px;color:#e0a0a0}
+  .good{background:rgba(107,255,200,.07);border-left:3px solid var(--accent3);border-radius:0 6px 6px 0;padding:12px 14px;margin:12px 0;font-size:13.5px;color:#a0e8cc}
+  .tip{background:rgba(255,201,107,.07);border:1px solid rgba(255,201,107,.2);border-radius:8px;padding:12px 14px;margin:12px 0;font-size:13.5px;color:#e8d0a0;display:flex;gap:10px}
+
+  /* ── CHECKLIST ── */
+  .cl{list-style:none;margin:10px 0}
+  .cl li{display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:14px;color:#a0a8c8}
+  .cl li:last-child{border-bottom:none}
+  .cl-n{color:var(--accent);font-weight:700;font-family:'JetBrains Mono',monospace;flex-shrink:0;min-width:20px}
+
+  /* ── EXPECTED OUTPUT ── */
+  .exp{
+    background:#050508;border:1px solid #1a2a1a;
+    border-radius:8px;padding:12px 14px;margin:12px 0;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;color:#58a65c;line-height:1.7;
+  }
+  .exp-lbl{color:var(--muted);font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;display:block}
+
+  /* ── WIRING TABLE ── */
+  .wtbl{width:100%;border-collapse:collapse;margin:12px 0}
+  .wtbl th{background:var(--surface2);color:var(--accent);font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:9px 13px;text-align:left;border-bottom:1px solid var(--border2)}
+  .wtbl td{padding:9px 13px;border-bottom:1px solid var(--border);font-size:13.5px;color:#a0a8c8}
+  .wtbl tr:last-child td{border-bottom:none}
+  .pin{font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(90,111,255,.15);color:#9aaeff;padding:2px 8px;border-radius:4px}
+
+  /* ── FINAL ── */
+  .final{
+    background:linear-gradient(135deg,#0f0f20 0%,#14102a 100%);
+    border:1px solid var(--border2);border-radius:16px;
+    padding:40px 32px;text-align:center;margin-top:56px;
+  }
+  .final h2{font-size:24px;font-weight:800;color:#fff;margin-bottom:8px}
+  .final p{color:var(--muted);font-size:14px;margin-bottom:24px}
+  .next{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .ntag{background:rgba(255,255,255,.05);border:1px solid var(--border2);border-radius:8px;padding:8px 16px;font-size:13px;color:var(--muted)}
+
+  footer{text-align:center;padding:36px;color:var(--muted);font-size:12px;border-top:1px solid var(--border);margin-top:40px;font-family:'JetBrains Mono',monospace}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="h-badge">Complete Project Guide · Ubuntu 24.04</div>
+  <h1>ESP32 Wi-Fi LED<br>Brightness Controller</h1>
+  <p>Everything in one place — hardware, firmware, web UI, and GitHub upload</p>
+  <div class="h-tags">
+    <span class="h-tag">Ubuntu 24.04</span>
+    <span class="h-tag">VS Code</span>
+    <span class="h-tag">PlatformIO</span>
+    <span class="h-tag">ESP32-WROOM</span>
+    <span class="h-tag">PWM · Wi-Fi · HTTP</span>
+    <span class="h-tag">GitHub</span>
+  </div>
+</header>
+
+<nav>
+  <div class="nav-inner">
+    <a class="nav-item" href="#setup">① System Setup</a>
+    <a class="nav-item" href="#project">② PlatformIO</a>
+    <a class="nav-item" href="#code">③ The Code</a>
+    <a class="nav-item" href="#hardware">④ Hardware</a>
+    <a class="nav-item" href="#upload">⑤ Upload</a>
+    <a class="nav-item" href="#test">⑥ Test</a>
+    <a class="nav-item" href="#github">⑦ GitHub</a>
+    <a class="nav-item" href="#trouble">⑧ Help</a>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!--  PHASE 1 — SYSTEM SETUP                            -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="phase" id="setup">
+  <div class="ph-num">PHASE 01</div>
+  <h2>System Setup — Ubuntu 24.04</h2>
+  <div class="ph-tag tag-sw">SOFTWARE</div>
+</div>
+
+<div class="step">
+  <div class="sh"><div class="sn">01</div><div>
+    <div class="st">Update your system</div>
+    <div class="sw">Always do this first — prevents dependency errors</div>
+  </div></div>
+  <div class="sb">
+    <p>Open terminal with <strong>Ctrl + Alt + T</strong>:</p>
+    <div class="cb"><div class="cb-label">terminal</div>
+    <pre>sudo apt update && sudo apt upgrade -y</pre></div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="sh"><div class="sn">02</div><div>
+    <div class="st">Fix USB permissions — CRITICAL</div>
+    <div class="sw">Without this, upload will always fail on Ubuntu</div>
+  </div></div>
+  <div class="sb">
+    <div class="cb"><div class="cb-label">terminal</div>
+    <pre>sudo usermod -a -G dialout $USER</pre></div>
+    <div class="warn">⚠️ <strong>Log out and log back in after this.</strong> The permission only takes effect after re-login. This is the #1 reason uploads fail on Ubuntu.</div>
+    <p>After re-login, verify:</p>
+    <div class="cb"><div class="cb-label">terminal</div>
+    <pre>groups $USER
+# You must see "dialout" in the list</pre></div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="sh"><div class="sn">03</div><div>
+    <div class="st">Install VS Code</div>
+    <div class="sw">The IDE that runs PlatformIO</div>
+  </div></div>
+  <div class="sb">
+    <div class="cb"><div class="cb-label">terminal</div>
+    <pre>sudo snap install code --classic</pre></div>
+    <p>Launch it:</p>
+    <div class="cb"><div class="cb-label">terminal</div>
+    <pre>code .</pre></div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="sh"><div class="sn">04</div><div>
+    <div class="st">Install PlatformIO extension</div>
+    <div class="sw">Turns VS Code into an embedded IDE</div>
+  </div></div>
+  <div class="sb">
+    <ul class="cl">
+      <li><span class="cl-n">①</span> Press <strong>Ctrl + Shift + X</strong> in VS Code</li>
+      <li><span class="cl-n">②</span> Search: <code>PlatformIO IDE</code></li>
+      <li><span class="cl-n">③</span> Click <strong>Install</strong> — wait 3–5 minutes</li>
+      <li><span class="cl-n">④</span> Click <strong>Reload Window</strong> when prompted</li>
+      <li><span class="cl-n">⑤</span> You'll see the 👽 alien icon in the left sidebar</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!--  PHASE 2 — PLATFORMIO PROJECT                      -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="phase" id="project">
+  <div class="ph-num">PHASE 02</div>
+  <h2>Create the PlatformIO Project</h2>
+  <div class="ph-tag tag-sw">SOFTWARE</div>
+</div>
+
+<div class="step">
+  <div class="sh"><div class="sn">05</div><div>
+    <div class="st">Create new project</div>
+    <div class="sw">Generates correct folder structure automatically</div>
+  </div></div>
+  <div class="sb">
+    <ul class="cl">
+      <li><span class="cl-n">①</span> Click 👽 PlatformIO icon in sidebar</li>
+      <li><span class="cl-n">②</span> Click <strong>New Project</strong></li>
+      <li><span class="cl-n">③</span> Fill in exactly:</li>
+    </ul>
+    <div class="cb"><div class="cb-label">project wizard</div>
+    <pre>Name      :  ESP32_LED_Controller
+Board     :  Espressif ESP32 Dev Module
+Framework :  Arduino</pre></div>
+    <ul class="cl" style="margin-top:8px">
+      <li><span class="cl-n">④</span> Click <strong>Finish</strong> — wait for it to complete</li>
+    </ul>
+    <p style="margin-top:10px">Your folder structure:</p>
+    <div class="cb"><div class="cb-label">folder structure</div>
+    <pre>ESP32_LED_Controller/
+├── platformio.ini     ← board config
+└── src/
+    └── main.cpp       ← your code</pre></div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="sh"><div class="sn">06</div><div>
+    <div class="st">Edit platformio.ini</div>
+    <div class="sw">Set the correct serial port for Ubuntu</div>
+  </div></div>
+  <div class="sb">
+    <p>Open <code>platformio.ini</code> — select all and replace with:</p>
+    <div class="cb"><div class="cb-label">platformio.ini</div>
+    <pre>[env:esp32dev]
+platform      = espressif32
+board         = esp32dev
+framework     = arduino
+monitor_speed = 115200
+upload_speed  = 921600
+monitor_port  = /dev/ttyUSB0
+upload_port   = /dev/ttyUSB0</pre></div>
+    <div class="info">💡 Verify your port by running: <code>ls /dev/ttyUSB* /dev/ttyACM* 2>/dev/null</code> after plugging in ESP32</div>
+    <p>Press <strong>Ctrl + S</strong> to save.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!--  PHASE 3 — THE CODE                                -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="phase" id="code">
+  <div class="ph-num">PHASE 03</div>
+  <h2>The Complete Code</h2>
+  <div class="ph-tag tag-sw">FIRMWARE</div>
+</div>
+
+<div class="step">
+  <div class="sh"><div class="sn">07</div><div>
+    <div class="st">Paste main.cpp — the complete firmware</div>
+    <div class="sw">Open src/main.cpp → select all → delete → paste this</div>
+  </div></div>
+  <div class="sb">
+    <div class="warn">⚠️ Change <code>YOUR_WIFI_NAME</code> and <code>YOUR_WIFI_PASSWORD</code> to your actual Wi-Fi. Must be 2.4 GHz.</div>
+    <div class="cb"><div class="cb-label">src/main.cpp — complete firmware</div>
+    <pre>#include &lt;Arduino.h&gt;
+#include &lt;WiFi.h&gt;
+#include &lt;WebServer.h&gt;
+
+// ── CHANGE THESE 2 LINES ──────────────────────────────────
+const char* WIFI_SSID     = "YOUR_WIFI_NAME";
+const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+// ─────────────────────────────────────────────────────────
+
+const int LED_PIN     = 2;
+const int PWM_CHANNEL = 0;
+const int PWM_FREQ    = 5000;
+const int PWM_BITS    = 8;
+
+WebServer server(80);
+int brightness = 50;
+
+void applyBrightness(int pct) {
+  pct = constrain(pct, 0, 100);
+  ledcWrite(PWM_CHANNEL, map(pct, 0, 100, 0, 255));
+  Serial.printf("[LED] %d%%\n", pct);
+}
+
+const char HTML[] PROGMEM = R"rawhtml(
+&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;
+&lt;meta charset="UTF-8"&gt;
+&lt;meta name="viewport" content="width=device-width,initial-scale=1"&gt;
+&lt;title&gt;LED Control&lt;/title&gt;
+&lt;style&gt;
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:sans-serif;background:#0d0d1a;color:#eee;
+     min-height:100vh;display:flex;align-items:center;justify-content:center;}
+.card{background:#13132a;border:1px solid #1e1e3a;border-radius:24px;
+      padding:40px 36px;width:340px;text-align:center;}
+.bulb{font-size:72px;display:block;margin-bottom:8px;
+      filter:brightness(0.3);transition:filter .4s;}
+h1{font-size:20px;color:#9aaeff;margin-bottom:4px;}
+.sub{font-size:12px;color:#444470;margin-bottom:28px;}
+.val{font-size:60px;font-weight:800;color:#fff;line-height:1;}
+.val span{font-size:20px;color:#444470;}
+.lbl{font-size:11px;color:#333360;letter-spacing:2px;
+     text-transform:uppercase;margin:4px 0 24px;}
+input[type=range]{-webkit-appearance:none;width:100%;height:6px;
+  border-radius:3px;outline:none;cursor:pointer;margin-bottom:18px;
+  background:linear-gradient(to right,#5060ff 0%,#5060ff var(--p,50%),
+  #1a1a3a var(--p,50%),#1a1a3a 100%);}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;
+  width:24px;height:24px;border-radius:50%;background:#fff;
+  box-shadow:0 0 0 3px #5060ff;cursor:pointer;}
+.presets{display:flex;gap:8px;margin-bottom:12px;}
+.pr{flex:1;padding:8px 4px;border-radius:8px;
+    border:1px solid #1e1e3a;background:#0f0f22;
+    font-size:12px;font-weight:600;color:#4a4a7a;cursor:pointer;}
+.pr:hover{border-color:#5060ff;color:#9aaeff;}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+button{padding:12px;border-radius:10px;border:1px solid #1e1e3a;
+       background:#1a1a30;color:#8a8aaa;font-size:13px;font-weight:600;cursor:pointer;}
+.off{background:#200a0a;border-color:#4a1a1a;color:#ff6b6b;}
+.on{background:#0a1030;border-color:#1a2a6a;color:#6a8aff;}
+.status{background:#0a0a1a;border:1px solid #161630;border-radius:8px;
+        padding:10px 14px;font-size:12px;color:#333360;
+        display:flex;align-items:center;gap:8px;}
+.dot{width:8px;height:8px;border-radius:50%;background:#ff4444;}
+.dot.ok{background:#44ff88;}
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;div class="card"&gt;
+  &lt;span class="bulb" id="bulb"&gt;&amp;#128161;&lt;/span&gt;
+  &lt;h1&gt;LED Controller&lt;/h1&gt;
+  &lt;p class="sub"&gt;ESP32 &amp;middot; PWM &amp;middot; Wi-Fi&lt;/p&gt;
+  &lt;div class="val" id="val"&gt;__BR__&lt;span&gt;%&lt;/span&gt;&lt;/div&gt;
+  &lt;div class="lbl"&gt;Brightness&lt;/div&gt;
+  &lt;input type="range" id="sl" min="0" max="100"
+         value="__BR__" oninput="onSlider(this.value)"&gt;
+  &lt;div class="presets"&gt;
+    &lt;div class="pr" onclick="set(25)"&gt;25%&lt;/div&gt;
+    &lt;div class="pr" onclick="set(50)"&gt;50%&lt;/div&gt;
+    &lt;div class="pr" onclick="set(75)"&gt;75%&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div class="btns"&gt;
+    &lt;button class="off" onclick="set(0)"&gt;OFF&lt;/button&gt;
+    &lt;button class="on" onclick="set(100)"&gt;FULL&lt;/button&gt;
+  &lt;/div&gt;
+  &lt;div class="status"&gt;
+    &lt;div class="dot ok" id="dot"&gt;&lt;/div&gt;
+    &lt;span id="st"&gt;Connected&lt;/span&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+&lt;script&gt;
+const sl=document.getElementById('sl');
+const valEl=document.getElementById('val');
+const bulb=document.getElementById('bulb');
+const dot=document.getElementById('dot');
+const st=document.getElementById('st');
+let t=null;
+function ui(v){
+  valEl.innerHTML=v+'&lt;span&gt;%&lt;/span&gt;';
+  sl.style.setProperty('--p',v+'%');sl.value=v;
+  bulb.style.filter=v&gt;0?'brightness('+(0.3+v/100*1.5)+')':'brightness(0.25)';
+}
+function send(v){
+  dot.className='dot';st.textContent='Setting...';
+  fetch('/set?brightness='+v)
+    .then(r=&gt;{dot.className='dot ok';st.textContent='Brightness: '+v+'%';})
+    .catch(()=&gt;{dot.className='dot';st.textContent='Connection lost!';});
+}
+function onSlider(v){ui(v);clearTimeout(t);t=setTimeout(()=&gt;send(v),80);}
+function set(v){ui(v);send(v);}
+ui(__BR__);
+&lt;/script&gt;
+&lt;/body&gt;&lt;/html&gt;
+)rawhtml";
+
+void handleRoot() {
+  String page = String(HTML);
+  page.replace("__BR__", String(brightness));
+  server.send(200, "text/html", page);
+}
+
+void handleSet() {
+  if (server.hasArg("brightness")) {
+    brightness = server.arg("brightness").toInt();
+    applyBrightness(brightness);
+    server.send(200, "text/plain", "OK");
+  } else {
+    server.send(400, "text/plain", "Missing param");
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  delay(500);
+  Serial.println("\n=== ESP32 LED Controller ===");
+  ledcSetup(PWM_CHANNEL, PWM_FREQ, PWM_BITS);
+  ledcAttachPin(LED_PIN, PWM_CHANNEL);
+  applyBrightness(brightness);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.printf("Connecting to %s", WIFI_SSID);
+  int tries = 0;
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500); Serial.print(".");
+    if (++tries &gt; 40) {
+      Serial.println("\nFailed! Restarting...");
+      delay(3000); ESP.restart();
+    }
+  }
+  Serial.println("\nConnected!");
+  Serial.printf("Open browser: http://%s\n",
+                WiFi.localIP().toString().c_str());
+  server.on("/",    HTTP_GET, handleRoot);
+  server.on("/set", HTTP_GET, handleSet);
+  server.onNotFound([](){
+    server.send(404, "text/plain", "Not found");
+  });
+  server.begin();
+  Serial.println("Server started!");
+}
+
+void loop() {
+  server.handleClient();
+  delay(2);
+}</pre></div>
+    <p>Press <strong>Ctrl + S</strong> to save.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!--  PHASE 4 — HARDWARE                                -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="phase" id="hardware">
+  <div class="ph-num">PHASE 04</div>
+  <h2>Wire the Hardware</h2>
+  <div class="ph-tag tag-hw">HARDWARE</div>
+</div>
+
+<div class="step">
+  <div class="sh"><div class="sn">08</div><div>
+    <div class="st">Connect LED to ESP32</div>
+    <div class="sw">3 connections total — resistor protects the LED</div>
+  </div></div>
+  <div class="sb">
+    <table class="wtbl">
+      <tr><th>From</th><th>Via</th><th>To</th><th>Note</th></tr>
+      <tr>
+        <td><span class="pin">GPIO 2</span></td>
+        <td>→ 220Ω resistor →</td>
+        <td>LED long leg (+)</td>
+        <td>Always use resistor</td>
+      </tr>
+      <tr>
+        <td>LED short leg (−)</td>
+        <td>→ wire →</td>
+        <td><span class="pin">GND</span></td>
+        <td>Any GND pin</td>
+      </tr>
+    </table>
+    <div class="tip"><span>💡</span><span><strong>No breadboard?</strong> GPIO2 is already connected to the built-in blue LED on most ESP32 boards. Just plug in USB and test — no wiring needed.</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!--  PHASE 5 — UPLOAD                                  -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="phase" id="upload">
+  <div class="ph-num">PHASE 05</div>
+  <h2>Upload to ESP32</h2>
+  <div class="ph-tag tag-hw">HARDWARE</div>
+</div>
+
+<div class="step">
+  <div class="sh"><div class="sn">09</div><div>
+    <div class="st">Verify ESP32 is detected</div>
+    <div class="sw">Do this before every upload session</div>
+  </div></div>
+  <div class="sb">
+    <p>Plug in ESP32 via USB, then run:</p>
+    <div class="cb"><div class="cb-label">terminal</div>
+    <pre>ls /dev/ttyUSB* /dev/ttyACM* 2>/dev/null</pre></div>
+    <div class="exp"><span class="exp-lbl">expected</span>/dev/ttyUSB0</div>
+    <div class="warn">⚠️ Nothing appears? Try a different USB cable — many cables are charge-only with no data wires.</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="sh"><div class="sn">10</div><div>
+    <div class="st">Build then Upload</div>
+    <div class="sw">Use the PlatformIO toolbar buttons at the bottom of VS Code</div>
+  </div></div>
+  <div class="sb">
+    <ul class="cl">
+      <li><span class="cl-n">①</span> Click <strong>✓ checkmark</strong> in bottom toolbar — builds the code</li>
+      <li><span class="cl-n">②</span> Click <strong>→ arrow</strong> in bottom toolbar — uploads to ESP32</li>
+    </ul>
+    <div class="exp"><span class="exp-lbl">expected upload output</span>Connecting........
+Chip is ESP32-D0WDQ6
+Writing at 0x00001000... (100 %)
+Hash of data verified.
+====== [SUCCESS] Took 5.1 seconds ======</div>
+    <div class="warn">⚠️ Stuck at "Connecting........."? Hold the <strong>BOOT</strong> button on your ESP32 while uploading. Release when you see "Connecting" in the output.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!--  PHASE 6 — TEST                                    -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="phase" id="test">
+  <div class="ph-num">PHASE 06</div>
+  <h2>Test the Project</h2>
+  <div class="ph-tag tag-hw">HARDWARE</div>
+</div>
+
+<div class="step">
+  <div class="sh"><div class="sn">11</div><div>
+    <div class="st">Open Serial Monitor — find the IP</div>
+    <div class="sw">The ESP32 prints its IP address here</div>
+  </div></div>
+  <div class="sb">
+    <p>Click the <strong>🔌 plug icon</strong> in the bottom toolbar. Press <strong>EN/Reset</strong> on ESP32.</p>
+    <div class="exp"><span class="exp-lbl">serial monitor output</span>=== ESP32 LED Controller ===
+Connecting to YourWiFi........
+Connected!
+Open browser: http://192.168.1.42
+Server started!</div>
+    <p style="margin-top:10px">Copy that IP address — e.g. <code>192.168.1.42</code></p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="sh"><div class="sn">12</div><div>
+    <div class="st">Open the web UI in browser</div>
+    <div class="sw">Works on any device on the same Wi-Fi</div>
+  </div></div>
+  <div class="sb">
+    <div class="cb"><div class="cb-label">browser address bar</div>
+    <pre>http://192.168.1.42     ← use YOUR IP from serial monitor</pre></div>
+    <div class="good">✅ You see the LED slider. Move it — LED brightness changes instantly!</div>
+    <p style="margin-top:10px">Test from terminal too:</p>
+    <div class="cb"><div class="cb-label">terminal — quick tests</div>
+    <pre># Set to 75%
+curl http://192.168.1.42/set?brightness=75
+
+# Turn off
+curl http://192.168.1.42/set?brightness=0
+
+# Full brightness
+curl http://192.168.1.42/set?brightness=100
+
+# Check status
+curl http://192.168.1.42/status</pre></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!--  PHASE 7 — GITHUB                                  -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="phase" id="github">
+  <div class="ph-num">PHASE 07</div>
+  <h2>Upload to GitHub</h2>
+  <div class="ph-tag tag-git">GIT</div>
+</div>
+
+<div class="step">
+  <div class="sh"><div class="sn">13</div><div>
+    <div class="st">Install Git</div>
+    <div class="sw">Version control tool — standard in every engineering job</div>
+  </div></div>
+  <div class="sb">
+    <div class="cb"><div class="cb-label">terminal</div>
+    <pre>sudo apt install git -y
+git --version
+# Expected: git version 2.x.x</pre></div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="sh"><div class="sn">14</div><div>
+    <div class="st">Configure Git with your details</div>
+    <div class="sw">Do this once — sets your name on all commits</div>
+  </div></div>
+  <div class="sb">
+    <div class="cb"><div class="cb-label">terminal</div>
+    <pre>git config --global user.name "jit2eapen"
+git config --global user.email "jit2vakathanam@gmail.com"</pre></div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="sh"><div class="sn">15</div><div>
+    <div class="st">Create a new repository on GitHub</div>
+    <div class="sw">The online storage for your code</div>
+  </div></div>
+  <div class="sb">
+    <ul class="cl">
+      <li><span class="cl-n">①</span> Go to <code>https://github.com/jit2eapen</code></li>
+      <li><span class="cl-n">②</span> Click <strong>+</strong> (top right) → <strong>New repository</strong></li>
+      <li><span class="cl-n">③</span> Fill in:</li>
+    </ul>
+    <div class="cb"><div class="cb-label">github new repo settings</div>
+    <pre>Repository name : ESP32-LED-Controller
+Description     : ESP32 Wi-Fi LED Brightness Controller
+Visibility      : Public
+Initialize      : Leave ALL boxes UNTICKED</pre></div>
+    <ul class="cl" style="margin-top:8px">
+      <li><span class="cl-n">④</span> Click <strong>Create repository</strong></li>
+    </ul>
+    <div class="warn">⚠️ Do NOT tick "Add README", "Add .gitignore" or "Choose license" — leave everything blank. We'll add these from terminal.</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="sh"><div class="sn">16</div><div>
+    <div class="st">Create Personal Access Token</div>
+    <div class="sw">GitHub requires this instead of your password</div>
+  </div></div>
+  <div class="sb">
+    <ul class="cl">
+      <li><span class="cl-n">①</span> Go to <code>https://github.com/settings/tokens</code></li>
+      <li><span class="cl-n">②</span> Click <strong>Generate new token (classic)</strong></li>
+      <li><span class="cl-n">③</span> Note: <code>ESP32 project</code></li>
+      <li><span class="cl-n">④</span> Expiration: <code>90 days</code></li>
+      <li><span class="cl-n">⑤</span> Tick ✅ <strong>repo</strong> checkbox</li>
+      <li><span class="cl-n">⑥</span> Click <strong>Generate token</strong></li>
+      <li><span class="cl-n">⑦</span> <strong>Copy the token immediately</strong> — you won't see it again!</li>
+    </ul>
+    <div class="warn">⚠️ Save the token in a text file right now. Once you leave that page it's gone forever.</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="sh"><div class="sn">17</div><div>
+    <div class="st">Create README and .gitignore</div>
+    <div class="sw">Good practice — every project needs these</div>
+  </div></div>
+  <div class="sb">
+    <p>Go to your project folder in terminal:</p>
+    <div class="cb"><div class="cb-label">terminal</div>
+    <pre>cd ~/PlatformIO/Projects/ESP32_LED_Controller</pre></div>
+    <p>Create README.md:</p>
+    <div class="cb"><div class="cb-label">terminal</div>
+    <pre>cat > README.md << 'EOF'
+# ESP32 Wi-Fi LED Brightness Controller
+
+IoT-based LED brightness control system using ESP32-WROOM.
+Real-time wireless brightness adjustment through a web browser
+using Wi-Fi and PWM control.
+
+## Hardware
+- ESP32-WROOM board
+- 1x LED
+- 1x 220Ω resistor
+- Breadboard + jumper wires
+
+## Wiring
+GPIO2 → 220Ω resistor → LED(+) → LED(-) → GND
+
+## Setup
+1. Open project in PlatformIO (VS Code)
+2. Edit src/main.cpp — change Wi-Fi name and password
+3. Upload to ESP32
+4. Open Serial Monitor — copy the IP address
+5. Open browser → type the IP address
+6. Control LED brightness from browser
+
+## Features
+- Real-time PWM brightness control (0-100%)
+- Web-based slider UI
+- Works on phone, laptop, tablet
+- OFF / FULL / 25% / 50% / 75% presets
+- Connection status indicator
+
+## Tech Stack
+- ESP32-WROOM (Arduino Framework)
+- PlatformIO
+- HTML + CSS + JavaScript
+- HTTP WebServer
+
+## Author
+jit2eapen
+EOF</pre></div>
+    <p style="margin-top:10px">Create .gitignore:</p>
+    <div class="cb"><div class="cb-label">terminal</div>
+    <pre>cat > .gitignore << 'EOF'
+.pio/
+.vscode/
+__pycache__/
+*.pyc
+*.o
+*.a
+EOF</pre></div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="sh"><div class="sn">18</div><div>
+    <div class="st">Push everything to GitHub</div>
+    <div class="sw">Run these commands one by one</div>
+  </div></div>
+  <div class="sb">
+    <div class="cb"><div class="cb-label">terminal — run ONE BY ONE</div>
+    <pre>git init
+
+git add .
+
+git commit -m "ESP32 LED Brightness Controller - Initial commit"
+
+git branch -M main
+
+git remote add origin https://github.com/jit2eapen/ESP32-LED-Controller.git
+
+git push -u origin main</pre></div>
+    <p style="margin-top:10px">When it asks for login:</p>
+    <div class="cb"><div class="cb-label">git login prompt</div>
+    <pre>Username: jit2eapen
+Password: (paste your token here — NOT your GitHub password)</pre></div>
+    <div class="exp"><span class="exp-lbl">expected output</span>Enumerating objects: 6, done.
+Counting objects: 100% (6/6), done.
+Writing objects: 100% (6/6), done.
+Branch 'main' set up to track remote branch 'main' from 'origin'.</div>
+    <div class="good">✅ Go to https://github.com/jit2eapen/ESP32-LED-Controller — you'll see all your files!</div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="sh"><div class="sn">19</div><div>
+    <div class="st">Future updates — how to push changes</div>
+    <div class="sw">Every time you change code, use these 3 commands</div>
+  </div></div>
+  <div class="sb">
+    <div class="cb"><div class="cb-label">terminal — after any code change</div>
+    <pre>git add .
+git commit -m "describe what you changed"
+git push</pre></div>
+    <div class="tip"><span>🧑‍💼</span><span>Write meaningful commit messages — "Fixed Wi-Fi reconnect bug" is better than "update". Your internship team will read these.</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!--  PHASE 8 — TROUBLESHOOTING                         -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="phase" id="trouble">
+  <div class="ph-num">PHASE 08</div>
+  <h2>Troubleshooting</h2>
+  <div class="ph-tag tag-sw">HELP</div>
+</div>
+
+<div class="step">
+  <div class="sh"><div class="sn">?</div><div>
+    <div class="st">Common problems and fixes</div>
+    <div class="sw">Check here before asking for help</div>
+  </div></div>
+  <div class="sb">
+    <table class="wtbl">
+      <tr><th>Problem</th><th>Fix</th></tr>
+      <tr><td>No /dev/ttyUSB0</td><td>Try different USB cable. Run <code>dmesg | tail -20</code> after plugging in</td></tr>
+      <tr><td>Upload "Permission denied"</td><td>Did you logout after <code>sudo usermod -a -G dialout $USER</code>? Log out and back in.</td></tr>
+      <tr><td>Stuck at "Connecting........."</td><td>Hold BOOT button on ESP32 while uploading</td></tr>
+      <tr><td>Wi-Fi never connects</td><td>Must be 2.4 GHz. Check SSID spelling (case-sensitive)</td></tr>
+      <tr><td>Browser can't reach IP</td><td>Phone/laptop must be on same Wi-Fi. Use http:// not https://</td></tr>
+      <tr><td>LED doesn't light up</td><td>Check long leg (+) faces GPIO2. Try built-in LED first.</td></tr>
+      <tr><td>git push asks password every time</td><td>Run: <code>git config --global credential.helper store</code></td></tr>
+      <tr><td>git push rejected</td><td>Run: <code>git pull --rebase origin main</code> then push again</td></tr>
+      <tr><td>Token expired</td><td>Go to github.com/settings/tokens and generate a new one</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- FINAL -->
+<div class="final">
+  <div style="font-size:52px;margin-bottom:14px">🎉</div>
+  <h2>Project Complete!</h2>
+  <p>You built a real IoT device and published it to GitHub.<br>These are the same skills used in industry every day.</p>
+  <div class="next">
+    <span class="ntag">→ Add RGB LED control</span>
+    <span class="ntag">→ Add physical potentiometer</span>
+    <span class="ntag">→ Save state to EEPROM</span>
+    <span class="ntag">→ Add WebSocket for faster control</span>
+    <span class="ntag">→ Deploy to MQTT cloud</span>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<footer>ESP32 LED Controller · Ubuntu 24.04 · PlatformIO · GitHub · jit2eapen</footer>
+
+<script>
+  // Highlight active nav item on scroll
+  const sections = document.querySelectorAll('.phase');
+  const navItems = document.querySelectorAll('.nav-item');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => {
+      if (window.scrollY >= s.offsetTop - 80) current = s.id;
+    });
+    navItems.forEach(n => {
+      n.classList.remove('active');
+      if (n.getAttribute('href') === '#' + current) n.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>
